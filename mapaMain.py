@@ -16,6 +16,7 @@ class mapaWin:
         self.layoutTable = builder.get_object("fixedMatrix")
         self.labelGenList = []
         self.txtGenList = []
+        self.arrayProb = []
         self.gens = 0
         window.set_default_size(1000, 1000)
         window.show_all()
@@ -43,9 +44,11 @@ class mapaWin:
 
     def onBtnGenerate(self, button):
         self.cleanTable()
+        self.arrayProb = []
         x = 75
         y = 0
         for i in range(self.gens+1):
+            lineProb = []
             for j in range(self.gens+1):
                 if i == 0:
                     if not j == self.gens:
@@ -58,13 +61,21 @@ class mapaWin:
                     label.show()
                 else:
                     entry = Gtk.Entry()
+                    entry.connect("changed", self.onEntryChanged, i-1, j-1)
                     entry.set_width_chars(3)
                     self.layoutTable.put(entry, x, y)
                     entry.show()
+                    lineProb.append(entry)
                 x += 75
             y += 50
             x = 0
-        return "A"
+            if len(lineProb) > 0:
+                self.arrayProb.append(lineProb)
+
+    def onEntryChanged(self, entry, x, y):
+        print("Hello"+str(x)+"-"+str(y))
+        self.arrayProb[x][y] = entry.get_text()
+
 
     def cleanGrid(self):
         self.labelGenList = []
