@@ -1,8 +1,16 @@
-GE01: abc
-GE02: def
-GE03: ghi
-GE04: jkl
-GE05: abc
-GE06: def
-GE07: ghi
-GE08: jkl
+- long wings
+- long bill
+- iridescent plumage
+- slow in-flight metabolism
+- Tail absent
+- tail curve
+- Large pedipalps
+- short wings
+- long bill
+- iridescent plumage
+- slow in-flight metabolism
+- Skin Warty
+- Acris Feet
+- legs large
+- Toes pointed
+- Parotoid gland

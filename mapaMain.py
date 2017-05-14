@@ -11,28 +11,72 @@ class mapaWin:
         builder.add_from_file("MapaUI.glade")
         builder.connect_signals(self)
         window = builder.get_object("winMapa")
-        self.grid = builder.get_object("gridGenDescription")
+        self.boxLabelGen = builder.get_object("boxLabelGen")
+        self.boxTxtGen = builder.get_object("boxTxtGen")
+        self.layoutTable = builder.get_object("fixedMatrix")
+        self.labelGenList = []
+        self.txtGenList = []
         self.gens = 0
-        window.set_default_size(800, 800)
+        window.set_default_size(1000, 1000)
         window.show_all()
-        self.hashGens = getGenDescriptions("genDescriptions.txt")
+        self.arrayGen = getGenDescriptions("genDescriptions.txt")
 
     def onSpinChange(self, button):
+        newQty = button.get_value_as_int()
+        if self.gens < newQty:
+            for i in range(self.gens,newQty):
+                label = Gtk.Label("GE"+str(i+1))
+                self.labelGenList.append(label)
+                self.boxLabelGen.pack_start(label, True, True, 1)
+                label.show()
+                entry = Gtk.Entry()
+                strDescription = "GE"+str(i+1)
+                if len(self.arrayGen)>newQty:
+                    strDescription = self.arrayGen[i-1]
+                else:
+                    self.arrayGen.append(strDescription)
+                entry.set_text(strDescription)
+                self.txtGenList.append(entry)
+                self.boxTxtGen.pack_start(entry, True, True, 1)
+                entry.show()
         self.gens = button.get_value_as_int()
-        self.cleanGrid()
-        print("TEST----"+str(self.gens))
-        i=0
-        for h in self.hashGens:
-            if i < self.gens:
-                print(h+"=>"+self.hashGens[h])
-            i+=1
 
-
-
+    def onBtnGenerate(self, button):
+        self.cleanTable()
+        x = 75
+        y = 0
+        for i in range(self.gens+1):
+            for j in range(self.gens+1):
+                if i == 0:
+                    if not j == self.gens:
+                        label = Gtk.Label("GE"+str(j+1))
+                        self.layoutTable.put(label, x, y)
+                        label.show()
+                elif j == 0:
+                    label = Gtk.Label("GE" + str(i))
+                    self.layoutTable.put(label, x, y)
+                    label.show()
+                else:
+                    entry = Gtk.Entry()
+                    entry.set_width_chars(3)
+                    self.layoutTable.put(entry, x, y)
+                    entry.show()
+                x += 75
+            y += 50
+            x = 0
+        return "A"
 
     def cleanGrid(self):
-        for g in self.grid:
-            self.grid.remove(g)
+        self.labelGenList = []
+        self.txtGenList = []
+        for g in self.boxLabelGen:
+            self.boxLabelGen.remove(g)
+        for g in self.boxTxtGen:
+            self.boxTxtGen.remove(g)
+
+    def cleanTable(self):
+        for l in self.layoutTable:
+            self.layoutTable.remove(l)
 
 if __name__=="__main__":
     window = mapaWin()

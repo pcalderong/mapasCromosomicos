@@ -10,24 +10,21 @@ def readFile(fileName):
     return text
 
 def getGens(text):
-    hashGens = {}
+    arrayGens = []
     for t in text:
-        temp = getPair(t)
-        hashGens.update(temp)
-    print(hashGens)
+        temp = getGen(t)
+        arrayGens.append(temp)
+    print(arrayGens)
 
-    return hashGens
+    return arrayGens
 
-def getPair(string):
-    key = ""
-    value = ""
+def getGen(string):
     flag = False
+    value = ""
     for s in string:
-        if s == ":":
+        if s == "-":
             flag = True
         elif flag:
-            if not s == " ":
-                value +=s
-        else:
-            key+=s
-    return {key: value}
+            # if not s == " ":/
+            value +=s
+    return value
