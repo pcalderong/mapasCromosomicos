@@ -25,6 +25,7 @@ class mapaWin:
     def onSpinChange(self, button):
         newQty = button.get_value_as_int()
         if self.gens < newQty:
+            print("--Add--")
             for i in range(self.gens,newQty):
                 label = Gtk.Label("GE"+str(i+1))
                 self.labelGenList.append(label)
@@ -40,37 +41,52 @@ class mapaWin:
                 self.txtGenList.append(entry)
                 self.boxTxtGen.pack_start(entry, True, True, 1)
                 entry.show()
+        else:
+            print("--Substract--")
+            for i in range(newQty, self.gens):
+                self.boxTxtGen.remove(self.txtGenList.pop())
+                self.boxLabelGen.remove(self.labelGenList.pop())
         self.gens = button.get_value_as_int()
+
+    def validateEmptyTextBox(self):
+        for i in range(0, self.gens):
+            if self.txtGenList[i].get_text() == '':
+                return False
+        return True
 
     def onBtnGenerate(self, button):
         self.cleanTable()
         self.arrayProb = []
         x = 75
         y = 0
-        for i in range(self.gens+1):
-            lineProb = []
-            for j in range(self.gens+1):
-                if i == 0:
-                    if not j == self.gens:
-                        label = Gtk.Label("GE"+str(j+1))
+        if self.validateEmptyTextBox():
+            for i in range(self.gens+1):
+                lineProb = []
+                for j in range(self.gens+1):
+                    if i == 0:
+                        if not j == self.gens:
+                            label = Gtk.Label("GE"+str(j+1))
+                            self.layoutTable.put(label, x, y)
+                            label.show()
+                    elif j == 0:
+                        label = Gtk.Label("GE" + str(i))
                         self.layoutTable.put(label, x, y)
                         label.show()
-                elif j == 0:
-                    label = Gtk.Label("GE" + str(i))
-                    self.layoutTable.put(label, x, y)
-                    label.show()
-                else:
-                    entry = Gtk.Entry()
-                    entry.connect("changed", self.onEntryChanged, i-1, j-1)
-                    entry.set_width_chars(3)
-                    self.layoutTable.put(entry, x, y)
-                    entry.show()
-                    lineProb.append(entry)
-                x += 75
-            y += 50
-            x = 0
-            if len(lineProb) > 0:
-                self.arrayProb.append(lineProb)
+                    else:
+                        entry = Gtk.Entry()
+                        entry.set_text("0.0")
+                        entry.connect("changed", self.onEntryChanged, i-1, j-1)
+                        entry.set_width_chars(3)
+                        self.layoutTable.put(entry, x, y)
+                        entry.show()
+                        lineProb.append(entry)
+                    x += 75
+                y += 50
+                x = 0
+                if len(lineProb) > 0:
+                    self.arrayProb.append(lineProb)
+        else:
+            print("Make sure you fill all the gen descriptions")
 
     def onEntryChanged(self, entry, x, y):
         print("Hello"+str(x)+"-"+str(y))
