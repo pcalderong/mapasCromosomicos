@@ -1,6 +1,7 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
+from gi.repository import Gdk
 from utils import getGenDescriptions
 
 class mapaWin:
@@ -75,8 +76,9 @@ class mapaWin:
                     else:
                         entry = Gtk.Entry()
                         entry.set_text("0.0")
+                        entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
                         entry.connect("changed", self.onEntryChanged, i-1, j-1)
-                        entry.set_width_chars(3)
+                        entry.set_width_chars(5)
                         self.layoutTable.put(entry, x, y)
                         entry.show()
                         lineProb.append(entry)
@@ -90,7 +92,32 @@ class mapaWin:
 
     def onEntryChanged(self, entry, x, y):
         print("Hello"+str(x)+"-"+str(y))
+        flagRed = False
+        try:
+            value = float(entry.get_text())
+            if value <= 0.0 or value > 1.0:
+                flagRed = True
+        except:
+            entry.set_text("0.0")
+            flagRed = True
+        if flagRed:
+            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
+        else:
+            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
         self.arrayProb[x][y] = entry.get_text()
+        self.displayRelation()
+
+    def displayRelation(self):
+        i = 0
+        j = 0
+        for row in self.arrayProb:
+            for col in row:
+                if i != j:
+                    value = col.get_text()
+                    print("GE"+str(i)+" and GE"+str(j)+" have "+str(float(value)*100.0)+"%")
+                j += 1
+            i+=1
+            j = 0
 
 
     def cleanGrid(self):
