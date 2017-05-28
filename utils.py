@@ -28,3 +28,7 @@ def getGen(string):
             # if not s == " ":/
             value +=s
     return value
+
+class MouseButtons:
+    LEFT_BUTTON = 1
+    RIGHT_BUTTON = 3

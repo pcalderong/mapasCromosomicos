@@ -1,8 +1,11 @@
 import gi
+import math
+import cairo
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from utils import getGenDescriptions
+from utils import MouseButtons
 
 class mapaWin:
 
@@ -19,9 +22,60 @@ class mapaWin:
         self.txtGenList = []
         self.arrayProb = []
         self.gens = 0
+        self.coords = []
+        self.size = 0
         window.set_default_size(1000, 1000)
         window.show_all()
         self.arrayGen = getGenDescriptions("genDescriptions.txt")
+        self.boxDrawMap = builder.get_object("boxMap")
+        self.initDrawingArea()
+
+    def initDrawingArea(self):
+        self.drawingMap = Gtk.DrawingArea()
+        self.drawingMap.set_size_request(600, 200)
+        self.drawingMap.connect('draw', self.draw)
+        # self.drawingMap.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        # self.drawingMap.connect('button-press-event', self.on_button_press)
+        self.drawingMap.show()
+        self.boxDrawMap.pack_start(self.drawingMap, True, True, 1)
+
+    def draw(self, widget, cr):
+        cr.set_source_rgba(0, 0, 0, 1)
+        cr.set_line_width(20)
+
+        cr.set_source_rgba(0, 0.45, 1, 1)
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+        cr.move_to(30, 90)
+        cr.line_to(560, 90)
+        cr.stroke()
+
+        cr.set_line_width(1.5)
+
+        cr.move_to(30, 65)
+        cr.line_to(30, 100)
+        cr.stroke()
+
+        cr.move_to(150, 65)
+        cr.line_to(150, 115)
+        cr.stroke()
+
+        cr.move_to(155, 65)
+        cr.line_to(155, 115)
+        cr.stroke()
+
+    # def onBtnPress(self, w, e):
+    #     if e.type == Gdk.EventType.BUTTON_PRESS \
+    #         and e.button == MouseButtons.LEFT_BUTTON:
+    #         # self.drawingMap.queue_draw()
+    #         self.cr.arc(0, 0, 50, 0, 2*math.pi)
+    #         self.cr.stroke_preserve()
+    #         self.cr.set_source_rgb(0.3, 0.4, 0.6)
+    #         self.cr.fill()
+    #         print("LEFT")
+    #     if e.type == Gdk.EventType.BUTTON_PRESS \
+    #             and e.button == MouseButtons.RIGHT_BUTTON:
+    #         self.drawingMap.queue_draw()
+    #         print("RIGHT")
 
     def onSpinChange(self, button):
         newQty = button.get_value_as_int()
@@ -81,7 +135,7 @@ class mapaWin:
                         entry.set_width_chars(5)
                         self.layoutTable.put(entry, x, y)
                         entry.show()
-                        lineProb.append(entry)
+                        lineProb.append(entry.get_text())
                     x += 75
                 y += 50
                 x = 0
@@ -91,6 +145,7 @@ class mapaWin:
             print("Make sure you fill all the gen descriptions")
 
     def onEntryChanged(self, entry, x, y):
+        # self.draw()
         print("Hello"+str(x)+"-"+str(y))
         flagRed = False
         try:
@@ -112,9 +167,9 @@ class mapaWin:
         j = 0
         for row in self.arrayProb:
             for col in row:
-                if i != j:
-                    value = col.get_text()
-                    print("GE"+str(i)+" and GE"+str(j)+" have "+str(float(value)*100.0)+"%")
+                # if i != j:
+                    # value = col.get_text()
+                print("GE"+str(i)+" and GE"+str(j)+" have "+col+"%")
                 j += 1
             i+=1
             j = 0
