@@ -32,3 +32,6 @@ def getGen(string):
 class MouseButtons:
     LEFT_BUTTON = 1
     RIGHT_BUTTON = 3
+
+def generateMap(matrix):
+    return True

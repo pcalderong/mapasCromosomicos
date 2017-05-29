@@ -1,11 +1,12 @@
 import gi
-import math
+# import math
 import cairo
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from utils import getGenDescriptions
-from utils import MouseButtons
+from utils import generateMap
+# from utils import MouseButtons
 
 class mapaWin:
 
@@ -22,8 +23,10 @@ class mapaWin:
         self.txtGenList = []
         self.arrayProb = []
         self.gens = 0
-        self.coords = []
-        self.size = 0
+        self.maps = {}
+        self.space = 0
+        self.displayMap = False
+        self.genLenght = []
         window.set_default_size(1000, 1000)
         window.show_all()
         self.arrayGen = getGenDescriptions("genDescriptions.txt")
@@ -32,7 +35,7 @@ class mapaWin:
 
     def initDrawingArea(self):
         self.drawingMap = Gtk.DrawingArea()
-        self.drawingMap.set_size_request(600, 200)
+        self.drawingMap.set_size_request(400, 200)
         self.drawingMap.connect('draw', self.draw)
         # self.drawingMap.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         # self.drawingMap.connect('button-press-event', self.on_button_press)
@@ -40,28 +43,23 @@ class mapaWin:
         self.boxDrawMap.pack_start(self.drawingMap, True, True, 1)
 
     def draw(self, widget, cr):
-        cr.set_source_rgba(0, 0, 0, 1)
-        cr.set_line_width(20)
+        if self.displayMap:
+            cr.set_source_rgba(0, 0, 0, 1)
+            cr.set_line_width(20)
 
-        cr.set_source_rgba(0, 0.45, 1, 1)
-        cr.set_line_cap(cairo.LINE_CAP_ROUND)
-        cr.move_to(30, 90)
-        cr.line_to(560, 90)
-        cr.stroke()
+            cr.set_source_rgba(0, 0.35, 1, 1)
+            cr.set_line_cap(cairo.LINE_CAP_ROUND)
+            cr.move_to(60, 130)
+            cr.line_to(330, 130)
+            cr.stroke()
 
-        cr.set_line_width(1.5)
-
-        cr.move_to(30, 65)
-        cr.line_to(30, 100)
-        cr.stroke()
-
-        cr.move_to(150, 65)
-        cr.line_to(150, 115)
-        cr.stroke()
-
-        cr.move_to(155, 65)
-        cr.line_to(155, 115)
-        cr.stroke()
+            cr.set_line_width(1.5)
+            cr.set_source_rgba(0, 0.7, 1, 1)
+            for x in self.genLenght:
+                offset = int(float(x) *100.0)+100
+                cr.move_to(60 + offset, 90)
+                cr.line_to(60 + offset, 150)
+                cr.stroke()
 
     # def onBtnPress(self, w, e):
     #     if e.type == Gdk.EventType.BUTTON_PRESS \
@@ -80,7 +78,6 @@ class mapaWin:
     def onSpinChange(self, button):
         newQty = button.get_value_as_int()
         if self.gens < newQty:
-            print("--Add--")
             for i in range(self.gens,newQty):
                 label = Gtk.Label("GE"+str(i+1))
                 self.labelGenList.append(label)
@@ -97,11 +94,11 @@ class mapaWin:
                 self.boxTxtGen.pack_start(entry, True, True, 1)
                 entry.show()
         else:
-            print("--Substract--")
             for i in range(newQty, self.gens):
                 self.boxTxtGen.remove(self.txtGenList.pop())
                 self.boxLabelGen.remove(self.labelGenList.pop())
         self.gens = button.get_value_as_int()
+        self.space = 300 / self.gens
 
     def validateEmptyTextBox(self):
         for i in range(0, self.gens):
@@ -110,6 +107,7 @@ class mapaWin:
         return True
 
     def onBtnGenerate(self, button):
+        self.displayMap = False
         self.cleanTable()
         self.arrayProb = []
         x = 75
@@ -130,8 +128,16 @@ class mapaWin:
                     else:
                         entry = Gtk.Entry()
                         entry.set_text("0.0")
-                        entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
-                        entry.connect("changed", self.onEntryChanged, i-1, j-1)
+                        if i == j:
+                            entry.set_editable(False)
+                            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.0, 1.0).to_color())
+                        elif i < j:
+                            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
+                            entry.connect("changed", self.onEntryChanged, i-1, j-1)
+                        else:
+                            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.0, 1.0).to_color())
+                            entry.set_text("---")
+                            entry.set_editable(False)
                         entry.set_width_chars(5)
                         self.layoutTable.put(entry, x, y)
                         entry.show()
@@ -145,8 +151,6 @@ class mapaWin:
             print("Make sure you fill all the gen descriptions")
 
     def onEntryChanged(self, entry, x, y):
-        # self.draw()
-        print("Hello"+str(x)+"-"+str(y))
         flagRed = False
         try:
             value = float(entry.get_text())
@@ -165,15 +169,22 @@ class mapaWin:
     def displayRelation(self):
         i = 0
         j = 0
+        tempFlag = True
+        self.genLenght = []
         for row in self.arrayProb:
             for col in row:
-                # if i != j:
-                    # value = col.get_text()
-                print("GE"+str(i)+" and GE"+str(j)+" have "+col+"%")
+                if i < j and col == "0.0":
+                    tempFlag = False
+                elif i == 0:
+                    name = "GE" + str(j)
+                    self.maps[name] = col
+                    self.genLenght.append(col)
                 j += 1
             i+=1
             j = 0
-
+        if not self.displayMap:
+            self.displayMap = tempFlag
+        self.drawingMap.queue_draw()
 
     def cleanGrid(self):
         self.labelGenList = []
@@ -184,8 +195,14 @@ class mapaWin:
             self.boxTxtGen.remove(g)
 
     def cleanTable(self):
+        self.genLenght = []
+        self.drawingMap.queue_draw()
         for l in self.layoutTable:
             self.layoutTable.remove(l)
+
+    def calculateProb(self, widget):
+        self.displayMap = generateMap(self.arrayProb)
+        self.drawingMap.queue_draw()
 
 if __name__=="__main__":
     window = mapaWin()
