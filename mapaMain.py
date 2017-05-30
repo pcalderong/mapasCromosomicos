@@ -7,7 +7,7 @@ from gi.repository import Gdk
 from utils import getGenDescriptions
 from utils import saveFile
 from utils import readFileWithProb
-# from utils import MouseButtons
+from utils import MouseButtons
 
 class mapaWin:
 
@@ -34,6 +34,8 @@ class mapaWin:
         self.displayMap = False
         self.distances = {}
         self.countFile = 0
+        self.isProbability = False
+        self.zoomLevel = 0
         window.set_default_size(1000, 1000)
         window.show_all()
         self.arrayGen = getGenDescriptions("genDescriptions.txt")
@@ -42,63 +44,88 @@ class mapaWin:
 
     def initDrawingArea(self):
         self.drawingMap = Gtk.DrawingArea()
-        self.drawingMap.set_size_request(400, 200)
+        self.drawingMap.set_size_request(700, 200)
         self.drawingMap.connect('draw', self.draw)
-        # self.drawingMap.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        # self.drawingMap.connect('button-press-event', self.on_button_press)
+        self.drawingMap.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.drawingMap.connect('button-press-event', self.onBtnPress)
         self.drawingMap.show()
         self.boxDrawMap.pack_start(self.drawingMap, True, True, 1)
 
     # Signal triggered to update drawing area
     def draw(self, widget, cr):
+        thickChrom = self.zoomLevel*5
+        thick = self.zoomLevel
+        xLines = self.zoomLevel+10
+        oS = 0
         if self.displayMap:
             cr.set_source_rgba(0, 0, 0, 1)
-            cr.set_line_width(20)
+            cr.set_line_width(20+thickChrom)
 
-            cr.set_source_rgba(0, 0.35, 1, 1)
+            cr.set_source_rgba(0, 0.35, 0.6, 1)
             cr.set_line_cap(cairo.LINE_CAP_ROUND)
-            cr.move_to(110, 80)
-            cr.line_to(400, 80)
+            cr.move_to(30, 80)
+            cr.line_to(290, 80)
             cr.stroke()
-
-            cr.set_line_width(1.5)
+            cr.set_line_width(1.5+thick)
             cr.set_source_rgba(0, 0.7, 1, 1)
-            cumulative = 110
+            cumulative = 40
             y = 0
             sortedDic = sorted(self.distances, key=self.distances.get)
             for key in sortedDic:
-                offset = (float(self.distances[key]) *100.0)+30
+                offset = (float(self.distances[key]) *100.0)+30+oS
 
                 if (float(self.distances[key]) > 0.5):
-                    cr.set_line_width(20)
-                    cr.set_source_rgba(0, 0.35, 1, 1)
+                    cr.set_line_width(20+thickChrom)
+                    cr.set_source_rgba(0.3, 0.35, 1, 1)
                     cr.set_line_cap(cairo.LINE_CAP_ROUND)
-                    cr.move_to(110, 165)
-                    cr.line_to(400, 165)
+                    cr.move_to(310, 80)
+                    cr.line_to(570, 80)
                     cr.stroke()
 
-                    cr.set_line_width(1.5)
+                    cr.set_line_width(1.5+thick)
                     cr.set_source_rgba(0, 0.7, 1, 1)
-                    y = 80
-                    cumulative = 110
+                    cumulative = 320
                 cumulative += offset
-                cr.move_to(cumulative, 40+y)
-                cr.line_to(cumulative, 100+y)
+                if self.zoomLevel == 1:
+                    cr.move_to(cumulative-10, 40 - xLines - 10)
+                    cr.set_font_size(10)
+                    cr.show_text(key)
+                if self.zoomLevel == 2:
+                    cr.move_to(cumulative-10, 40 - xLines - 10)
+                    cr.set_font_size(12)
+                    cr.show_text(key)
+                elif self.zoomLevel == 3:
+                    cr.move_to(cumulative-10, 40 - xLines - 10)
+                    cr.set_font_size(14)
+                    cr.show_text(key)
+                    cr.move_to(cumulative - 10, 100 + xLines + 15)
+                    cr.set_font_size(14)
+                    cr.show_text(self.distances[key])
+                elif self.zoomLevel == 4:
+                    cr.move_to(cumulative-10, 40 - xLines - 10)
+                    cr.set_font_size(16)
+                    cr.show_text(key)
+                    cr.move_to(cumulative - 10, 100 + xLines + 15)
+                    cr.set_font_size(16)
+                    cr.show_text(self.distances[key])
+
+                cr.move_to(cumulative, 40-xLines)
+                cr.line_to(cumulative, 100+xLines)
                 cr.stroke()
 
-    # def onBtnPress(self, w, e):
-    #     if e.type == Gdk.EventType.BUTTON_PRESS \
-    #         and e.button == MouseButtons.LEFT_BUTTON:
-    #         # self.drawingMap.queue_draw()
-    #         self.cr.arc(0, 0, 50, 0, 2*math.pi)
-    #         self.cr.stroke_preserve()
-    #         self.cr.set_source_rgb(0.3, 0.4, 0.6)
-    #         self.cr.fill()
-    #         print("LEFT")
-    #     if e.type == Gdk.EventType.BUTTON_PRESS \
-    #             and e.button == MouseButtons.RIGHT_BUTTON:
-    #         self.drawingMap.queue_draw()
-    #         print("RIGHT")
+    def onBtnPress(self, w, e):
+        if e.type == Gdk.EventType.BUTTON_PRESS \
+            and e.button == MouseButtons.LEFT_BUTTON:
+            if self.zoomLevel < 4:
+                self.zoomLevel+=1
+            self.drawingMap.queue_draw()
+            print("LEFT"+str(self.zoomLevel))
+        if e.type == Gdk.EventType.BUTTON_PRESS \
+                and e.button == MouseButtons.RIGHT_BUTTON:
+            if self.zoomLevel > 0:
+                self.zoomLevel-=1
+            self.drawingMap.queue_draw()
+            print("RIGHT"+str(self.zoomLevel))
 
     # Signal triggered by spiner when user changes the value
     def onSpinChange(self, button):
@@ -121,23 +148,25 @@ class mapaWin:
         self.arrayProb = []
         self.generateTable(self.gens)
         self.distances = {}
+        self.isProbability = False
 
     # Signal triggered when the entry is changed.
     def onEntryChanged(self, entry, x, y):
         flagRed = False
-        try:
-            value = float(entry.get_text())
-            if value <= 0.0 or value > 1.0:
+        if not self.isProbability:
+            try:
+                value = float(entry.get_text())
+                if value <= 0.0 or value > 1.0:
+                    flagRed = True
+            except:
+                entry.set_text("0.0")
                 flagRed = True
-        except:
-            entry.set_text("0.0")
-            flagRed = True
-        if flagRed:
-            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
-        else:
-            entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
-        self.arrayProb[x][y] = entry
-        self.displayRelation()
+            if flagRed:
+                entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
+            else:
+                entry.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
+            self.arrayProb[x][y] = entry
+            self.displayRelation()
 
     # INFERENCE
     def displayRelation(self):
@@ -195,29 +224,59 @@ class mapaWin:
         for l in self.layoutTable:
             self.layoutTable.remove(l)
 
-    #
+
     def calculateProb(self, widget):
         i = 0
         j = 0
+        self.isProbability = True
         for row in self.arrayProb:
             for col in row:
-                if col.get_text() == "0.0" and i<j:
-                    if i<self.gens and not(self.arrayProb[i+1][j].get_text() == "0.0"):
-                        value = float(self.arrayProb[i][j-1].get_text()) + \
-                                float(self.arrayProb[i+1][j].get_text())
-                        col.set_text(str(value))
-                        col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 1.0, 0.0).to_color())
-                    else:
-                        value = float(self.arrayProb[1][j].get_text()) - \
-                                float(self.arrayProb[1][j-1].get_text())
-                        col.set_text(str(value))
-                        col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.8, 0.5, 0.0).to_color())
+                if i<j:
+                    col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
+                    if col.get_text() == "0.0":
+                        if i<self.gens and not(self.arrayProb[i+1][j].get_text() == "0.0"):
+                            value = float(self.arrayProb[i][j-1].get_text()) + \
+                                    float(self.arrayProb[i+1][j].get_text())
+                            col.set_text(str(value))
+                            col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.8, 0.5, 0.0).to_color())
+                        else:
+                            value = float(self.arrayProb[0][j].get_text()) - \
+                                    float(self.arrayProb[0][i].get_text())
+                            col.set_text(str(value))
+                            col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.8, 0.5, 0.0).to_color())
                 j+=1
             j = 0
             i += 1
+        self.displayRelationWithProb()
 
+    def displayRelationWithProb(self):
+        i = 1
+        j = 1
+        self.displayMap = True
+        for row in self.arrayProb:
+            for col in row:
+                nameI = "GE" + str(i)
+                nameJ = "GE" + str(j)
+                if i == 1 and j == 1:
+                    self.distances[nameI] = col.get_text()
+                elif i < j:
+                    if nameJ in self.distances:
+                        valueJ = float(self.distances[nameJ])
+                        valueI = float(self.distances[nameI])
+                        newValue = float(col.get_text())
+                        if i == 1:
+                            self.distances[nameJ] = col.get_text()
+                    elif float(col.get_text()) not in self.distances.values():
+                        self.distances[nameJ] = col.get_text()
+
+                elif i == 0:
+                    name = "GE" + str(j)
+                    self.maps[name] = col.get_text()
+                    self.distances.append(col.get_text())
+                j += 1
+            i += 1
+            j = 1
         self.drawingMap.queue_draw()
-
 
     #Signal triggered when file is selected to save the filename.
     def onFileSelected(self, widget):
