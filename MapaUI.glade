@@ -7,6 +7,41 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkFileChooserDialog" id="filechooserdialogD">
+    <property name="can_focus">False</property>
+    <property name="window_position">center</property>
+    <property name="type_hint">dialog</property>
+    <property name="gravity">north-east</property>
+    <signal name="file-activated" handler="onFileSelected" swapped="no"/>
+    <signal name="response" handler="onResponseDialog" swapped="no"/>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="filechooserdialog-vbox1">
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="filechooserdialog-action_area1">
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkWindow" id="winMapa">
     <property name="can_focus">False</property>
     <child>
@@ -141,7 +176,7 @@
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
-                                        <property name="top_attach">0</property>
+                                        <property name="top_attach">1</property>
                                       </packing>
                                     </child>
                                     <child>
@@ -155,6 +190,30 @@
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
+                                        <property name="top_attach">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="btnSaveGens">
+                                        <property name="label" translatable="yes">Save File</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <signal name="clicked" handler="onSaveFile" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">1</property>
+                                        <property name="top_attach">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkFileChooserButton" id="fcGen">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="dialog">filechooserdialogD</property>
+                                      </object>
+                                      <packing>
+                                        <property name="left_attach">0</property>
                                         <property name="top_attach">0</property>
                                       </packing>
                                     </child>
@@ -310,5 +369,10 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkFileFilter" id="filefilter1">
+    <mime-types>
+      <mime-type>*.txt</mime-type>
+    </mime-types>
   </object>
 </interface>
