@@ -1,11 +1,10 @@
 import gi
-# import math
+import math
 import cairo
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from utils import getGenDescriptions
-from utils import generateMap
 from utils import saveFile
 from utils import readFileWithProb
 # from utils import MouseButtons
@@ -33,7 +32,7 @@ class mapaWin:
         self.maps = {}
         self.space = 0
         self.displayMap = False
-        self.genLenght = []
+        self.distances = {}
         self.countFile = 0
         window.set_default_size(1000, 1000)
         window.show_all()
@@ -58,16 +57,33 @@ class mapaWin:
 
             cr.set_source_rgba(0, 0.35, 1, 1)
             cr.set_line_cap(cairo.LINE_CAP_ROUND)
-            cr.move_to(60, 130)
-            cr.line_to(330, 130)
+            cr.move_to(110, 80)
+            cr.line_to(400, 80)
             cr.stroke()
 
             cr.set_line_width(1.5)
             cr.set_source_rgba(0, 0.7, 1, 1)
-            for x in self.genLenght:
-                offset = int(float(x) *100.0)+100
-                cr.move_to(60 + offset, 90)
-                cr.line_to(60 + offset, 150)
+            cumulative = 110
+            y = 0
+            sortedDic = sorted(self.distances, key=self.distances.get)
+            for key in sortedDic:
+                offset = (float(self.distances[key]) *100.0)+30
+
+                if (float(self.distances[key]) > 0.5):
+                    cr.set_line_width(20)
+                    cr.set_source_rgba(0, 0.35, 1, 1)
+                    cr.set_line_cap(cairo.LINE_CAP_ROUND)
+                    cr.move_to(110, 165)
+                    cr.line_to(400, 165)
+                    cr.stroke()
+
+                    cr.set_line_width(1.5)
+                    cr.set_source_rgba(0, 0.7, 1, 1)
+                    y = 80
+                    cumulative = 110
+                cumulative += offset
+                cr.move_to(cumulative, 40+y)
+                cr.line_to(cumulative, 100+y)
                 cr.stroke()
 
     # def onBtnPress(self, w, e):
@@ -104,6 +120,7 @@ class mapaWin:
         self.cleanTable()
         self.arrayProb = []
         self.generateTable(self.gens)
+        self.distances = {}
 
     # Signal triggered when the entry is changed.
     def onEntryChanged(self, entry, x, y):
@@ -124,23 +141,45 @@ class mapaWin:
 
     # INFERENCE
     def displayRelation(self):
-        i = 0
-        j = 0
-        tempFlag = True
-        self.genLenght = []
+        i = 1
+        j = 1
+        isValid = True
         for row in self.arrayProb:
             for col in row:
-                if i < j and col.get_text() == "0.0":
-                    tempFlag = False
+                nameI = "GE"+str(i)
+                nameJ = "GE"+str(j)
+                if i == 1 and j == 1:
+                    self.distances[nameI] = col.get_text()
+                elif i < j:
+                    if col.get_text() == "0.0":
+                        isValid = False
+                    else:
+                        if nameJ in self.distances:
+                            valueJ = float(self.distances[nameJ])
+                            valueI = float(self.distances[nameI])
+                            newValue = float(col.get_text())
+                            if i == 1:
+                                col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
+                                self.distances[nameJ] = col.get_text()
+                            elif not(math.isclose(abs(valueI-valueJ),newValue)):
+                                col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
+                                isValid = False
+                        elif float(col.get_text()) not in self.distances.values():
+                            col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.0, 0.7, 0.4).to_color())
+                            self.distances[nameJ] = col.get_text()
+                        else:
+                            col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 0.0, 0.0).to_color())
+                            isValid = False
+
                 elif i == 0:
                     name = "GE" + str(j)
                     self.maps[name] = col.get_text()
-                    self.genLenght.append(col.get_text())
+                    self.distances.append(col.get_text())
                 j += 1
             i+=1
-            j = 0
+            j = 1
         if not self.displayMap:
-            self.displayMap = tempFlag
+            self.displayMap = isValid
         self.drawingMap.queue_draw()
 
     # Clean up UI on gen list side.
@@ -151,14 +190,32 @@ class mapaWin:
 
     # Clean up UI on probability side.
     def cleanTable(self):
-        self.genLenght = []
+        self.distances = {}
         self.drawingMap.queue_draw()
         for l in self.layoutTable:
             self.layoutTable.remove(l)
 
     #
     def calculateProb(self, widget):
-        self.displayMap = generateMap(self.arrayProb)
+        i = 0
+        j = 0
+        for row in self.arrayProb:
+            for col in row:
+                if col.get_text() == "0.0" and i<j:
+                    if i<self.gens and not(self.arrayProb[i+1][j].get_text() == "0.0"):
+                        value = float(self.arrayProb[i][j-1].get_text()) + \
+                                float(self.arrayProb[i+1][j].get_text())
+                        col.set_text(str(value))
+                        col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(1.0, 1.0, 0.0).to_color())
+                    else:
+                        value = float(self.arrayProb[1][j].get_text()) - \
+                                float(self.arrayProb[1][j-1].get_text())
+                        col.set_text(str(value))
+                        col.modify_fg(Gtk.StateFlags.NORMAL, Gdk.RGBA(0.8, 0.5, 0.0).to_color())
+                j+=1
+            j = 0
+            i += 1
+
         self.drawingMap.queue_draw()
 
 
@@ -175,6 +232,7 @@ class mapaWin:
             result = readFileWithProb(self.fileName)
             self.loadFileGen(result[0])
             self.loadMatrix(result[1], len(result[0]))
+            self.drawingMap.queue_draw()
 
     # Reads the list of elements thar were loaded from the
     # file and display it on the application.
